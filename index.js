@@ -199,7 +199,13 @@ function addDepartment () {
             name:'departmentName',
             message:'What is the name of the department?'
         }
-    ]).then(answer);
+    ]).then((answer)=>{
+        db.query(`INSERT INTO department SET department.name=?`,answer.departmentName,(err,res)=>{
+            if (err) throw err;
+            console.log(`NEW DEPARTMENT IS ADDED`);
+            init() ;
+        });
+    });
 };
 
 function quit () {
