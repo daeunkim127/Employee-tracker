@@ -87,10 +87,47 @@ function viewAllEmployees() {
 };
 
 function addEmployee() {
+    inquirer.prompt([
+        {
+            type:'input',
+            name:'employeeFirstName',
+            message:`What is the employee's first name?`
+        },
+        {
+            type:'input',
+            name: 'employeeLastName',
+            message:`What is the employee's last name?`
+        },
+        {
+            type:'list',
+            name:'employeeRole',
+            message:`What is the employee's role?`,
+            choice:['Sales Lead','Salesperson','Lead Engineer','Software Engineer','Account Manager','Accountant','Legal Team Lead','Lawyer']
+        },
+        {
+            type:'list',
+            name:'employeeManager',
+            message:`Who is meployee's manager?`,
+            choice:['John Doe','Mike Chan','Ashley Rodriguez','Kevin Tupik','Kunal Singh','Malia Brown','Sarah Lourd','Tom Allen']
+        }
+    ]);
 };
 
 function updateEmployeeRoles() {
-
+    inquirer.prompt([
+        {
+            type:'list',
+            name:'updateEmployee',
+            message:`Which employee's role do you want to update?`,
+            choice:['John Doe','Mike Chan','Ashley Rodriguez','Kevin Tupik','Kunal Singh','Malia Brown','Sarah Lourd','Tom Allen']
+        },
+        {
+            type:'list',
+            name:'employeeRole',
+            message:`Which role do you want to assign the selected employee?`,
+            choice:['Sales Lead','Salesperson','Lead Engineer','Software Engineer','Account Manager','Accountant','Legal Team Lead','Lawyer']
+        }
+    ]);
 };
 
 function viewAllRoles() {
@@ -107,7 +144,43 @@ function viewAllRoles() {
 };
 
 function addRole () {
+    db.query(`SELECT * FROM department;`,(err, res)=>{
+        if (err) throw err;
+        const departmentChoice = res.map(department => ({name:department.name, value: department.id}));
+        inquirer.prompt([
+            {
+                type:'input',
+                name:'roleTitle',
+                message:'What is the name of the role?'
+            },
+            {
+                type:'input',
+                name: 'roleSalary',
+                message:'What is the salary or the role?'
+            },
+            {
+                type:'list',
+                name:'roleDepartment',
+                message:'Which department does the role belong to?',
+                choices:departmentChoice
+            }
 
+        ]).then((answer)=>{
+
+            db.query('INSERT INTO role SET ?', 
+                {
+                    title:answer.roleTitle,
+                    salary: answer.roleSalary,
+                    department_id:answer.roleDepartment
+                }, 
+                (err, results)=>{
+                    if (err) throw err;
+                    console.log('NEW ROLE ADDED')
+                    init() 
+                }
+            );
+        });
+    });
 };
 
 function viewAllDepartments () {
@@ -120,7 +193,13 @@ function viewAllDepartments () {
     
 
 function addDepartment () {
-
+    inquirer.prompt([
+        {
+            type:'input',
+            name:'departmentName',
+            message:'What is the name of the department?'
+        }
+    ]).then(answer);
 };
 
 function quit () {
