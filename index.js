@@ -32,7 +32,6 @@ function init() {
             'Quit'
         ]
     }).then(answer => {
-        console.log(answer)
         switch(answer.selection) {
             case 'View All Employees':
                 viewAllEmployees();
@@ -87,52 +86,97 @@ function viewAllEmployees() {
 };
 
 function addEmployee() {
-    inquirer.prompt([
-        {
-            type:'input',
-            name:'employeeFirstName',
-            message:`What is the employee's first name?`
-        },
-        {
-            type:'input',
-            name: 'employeeLastName',
-            message:`What is the employee's last name?`
-        },
-        {
-            type:'list',
-            name:'employeeRole',
-            message:`What is the employee's role?`,
-            choice:['Sales Lead','Salesperson','Lead Engineer','Software Engineer','Account Manager','Accountant','Legal Team Lead','Lawyer']
-        },
-        {
-            type:'list',
-            name:'employeeManager',
-            message:`Who is meployee's manager?`,
-            choice:['John Doe','Mike Chan','Ashley Rodriguez','Kevin Tupik','Kunal Singh','Malia Brown','Sarah Lourd','Tom Allen']
-        }
-    ]);
-};
+    db.query(`SELECT * FROM role;`,(err, res)=>{
+        if (err) throw err;
+        const roleChoices = res.map(role => ({name:role.title, value: role.id}));
+
+        db.query(`SELECT * FROM employee;`,(err, res)=>{
+            if (err) throw err;
+            const managerChoices = res.map(employee => ({name:employee.first_name+' '+employee.last_name, value: employee.id}));
+        
+            inquirer.prompt([
+                {
+                    type:'input',
+                    name:'employeeFirstName',
+                    message:`What is the employee's first name?`
+                },
+                {
+                    type:'input',
+                    name: 'employeeLastName',
+                    message:`What is the employee's last name?`
+                },
+                {
+                    type:'list',
+                    name:'employeeRole',
+                    message:`What is the employee's role?`,
+                    choices:roleChoices
+                },
+                {
+                    type:'list',
+                    name:'employeeManager',
+                    message:`Who is meployee's manager?`,
+                    choices:managerChoices
+                }
+            ]).then((answer)=>{
+                db.query(`INSERT INTO employee SET ?`,{
+                    first_name:answer.employeeFirstName,
+                    last_name: answer.employeeLastName,
+                    role_id:answer.employeeRole,
+                    manager_id: answer.employeeManager
+                }, (err,res)=>{
+                    if (err) throw err;
+                    console.log('\n NEW EMPLOYEE ADDED! \n');
+                    init();
+                })
+            });
+        });
+    });
+}
 
 function updateEmployeeRoles() {
-    inquirer.prompt([
-        {
-            type:'list',
-            name:'updateEmployee',
-            message:`Which employee's role do you want to update?`,
-            choice:['John Doe','Mike Chan','Ashley Rodriguez','Kevin Tupik','Kunal Singh','Malia Brown','Sarah Lourd','Tom Allen']
-        },
-        {
-            type:'list',
-            name:'employeeRole',
-            message:`Which role do you want to assign the selected employee?`,
-            choice:['Sales Lead','Salesperson','Lead Engineer','Software Engineer','Account Manager','Accountant','Legal Team Lead','Lawyer']
-        }
-    ]);
+    db.query(`SELECT * FROM employee;`, (err,res)=> {
+        if (err) throw err;
+        const employeeChoices = res.map(employee =>({name: employee.first_name+' '+employee.last_name, value: employee.id}));
+
+        db.query(`SELECT * FROM role;`, (err,res)=> {
+            if (err) throw err;
+            const roleChoices = res.map(role => ({name:role.title, value: role.id}));
+                
+            inquirer.prompt([
+                {
+                    type:'list',
+                    name:'updateEmployee',
+                    message:`Which employee's role do you want to update?`,
+                    choices: employeeChoices
+                },
+                {
+                    type:'list',
+                    name:'updateEmployeeRole',
+                    message:`Which role do you want to assign the selected employee?`,
+                    choices: roleChoices
+                }
+            ]).then((answer)=>{
+                db.query(`UPDATE employee SET ? WHERE ?`,
+                [
+                    {
+                        role_id:answer.updateEmployeeRole
+                    },
+                    {
+                        id:answer.updateEmployee
+                    }
+                ], (err, res)=> {
+                    if (err) throw err;
+                    console.log(`\n EMPLOYEE'S ROLE IS UPDATED! \n`)
+                    init();
+                })
+            });
+        });
+    });
 };
 
 function viewAllRoles() {
     db.query(
-        `SELECT employee.first_N, role.title, department.name AS department, role.salary  
+        `SELECT role.id, role.title, department.name AS department, role.salary  
          FROM role 
          JOIN department 
          ON role.department_id=department.id
@@ -175,7 +219,7 @@ function addRole () {
                 }, 
                 (err, results)=>{
                     if (err) throw err;
-                    console.log('NEW ROLE ADDED')
+                    console.log('\n NEW ROLE ADDED! \n')
                     init() 
                 }
             );
@@ -202,14 +246,14 @@ function addDepartment () {
     ]).then((answer)=>{
         db.query(`INSERT INTO department SET department.name=?`,answer.departmentName,(err,res)=>{
             if (err) throw err;
-            console.log(`NEW DEPARTMENT IS ADDED`);
+            console.log(`\n NEW DEPARTMENT IS ADDED! \n`);
             init() ;
         });
     });
 };
 
 function quit () {
-    return;
+   
 };
 
 init();
